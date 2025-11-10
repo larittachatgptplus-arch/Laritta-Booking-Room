@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Booking Ruangan</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ee2e24 0%, #ff6b6b 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header-logo {
+            max-width: 400px;
+            height: auto;
+            margin: 0 auto 20px;
+            display: block;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .booking-form {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .booking-form h2 {
+            color: #ee2e24;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #ee2e24;
+        }
+        
+        .time-range {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #ee2e24 0%, #ff6b6b 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(238, 46, 36, 0.4);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .availability-panel {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .availability-panel h2 {
+            color: #ee2e24;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .room-card {
+            background: #FFF8F0;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 5px solid #ee2e24;
+        }
+        
+        .room-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .room-status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        
+        .status-available {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-booked {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .bookings-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .bookings-section h2 {
+            color: #ee2e24;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .booking-item {
+            background: #FFF8F0;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 5px solid #F77F00;
+        }
+        
+        .booking-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .booking-room {
+            font-weight: 700;
+            color: #ee2e24;
+            font-size: 1.1em;
+        }
+        
+        .booking-details {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        .delete-btn:hover {
+            background: #c82333;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .view-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .toggle-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+            color: #ee2e24;
+        }
+        
+        .toggle-btn.active {
+            background: linear-gradient(135deg, #ee2e24 0%, #ff6b6b 100%);
+            color: white;
+            box-shadow: 0 5px 15px rgba(238, 46, 36, 0.4);
+        }
+        
+        .calendar-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .calendar-header h2 {
+            color: #ee2e24;
+            font-size: 1.8em;
+        }
+        
+        .calendar-nav {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .nav-btn {
+            background: #ee2e24;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        .nav-btn:hover {
+            background: #ff6b6b;
+        }
+        
+        .current-month {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #333;
+            min-width: 200px;
+            text-align: center;
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+        }
+        
+        .calendar-day-header {
+            text-align: center;
+            font-weight: 700;
+            color: #ee2e24;
+            padding: 15px 5px;
+            background: #FFF8F0;
+            border-radius: 8px;
+        }
+        
+        .calendar-day {
+            min-height: 100px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+        
+        .calendar-day:hover {
+            border-color: #ee2e24;
+            box-shadow: 0 3px 10px rgba(238, 46, 36, 0.2);
+        }
+        
+        .calendar-day.other-month {
+            background: #FFF8F0;
+            opacity: 0.5;
+        }
+        
+        .calendar-day.today {
+            border-color: #F77F00;
+            background: #FFF8F0;
+        }
+        
+        .day-number {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .day-events {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        
+        .event-dot {
+            font-size: 0.75em;
+            padding: 3px 6px;
+            border-radius: 4px;
+            color: white;
+            font-weight: 600;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            animation: fadeIn 0.3s;
+        }
+        
+        .modal.show {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .modal-header h3 {
+            color: #ee2e24;
+            font-size: 1.5em;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 2em;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s;
+        }
+        
+        .close-btn:hover {
+            color: #333;
+        }
+        
+        .modal-event {
+            background: #FFF8F0;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 5px solid #ee2e24;
+        }
+        
+        .modal-event-header {
+            font-weight: 700;
+            color: #ee2e24;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+        
+        .modal-event-detail {
+            color: #666;
+            line-height: 1.8;
+        }
+        
+        @media (max-width: 968px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .calendar-grid {
+                gap: 5px;
+            }
+            
+            .calendar-day {
+                min-height: 80px;
+                padding: 5px;
+            }
+            
+            .day-number {
+                font-size: 0.9em;
+            }
+            
+            .event-dot {
+                font-size: 0.65em;
+                padding: 2px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            const [formData, setFormData] = useState({
+                pemohon: '',
+                hub: '',
+                ruangan: '',
+                tanggal: '',
+                jamMulai: '',
+                jamSelesai: '',
+                kegiatan: ''
+            });
+            
+            const [bookings, setBookings] = useState([]);
+            const [message, setMessage] = useState({ text: '', type: '' });
+            const [viewMode, setViewMode] = useState('list'); // 'list' or 'calendar'
+            const [currentDate, setCurrentDate] = useState(new Date());
+            const [selectedDate, setSelectedDate] = useState(null);
+            const [showModal, setShowModal] = useState(false);
+            
+            const hubs = {
+                'surabaya': {
+                    name: 'Surabaya Raya',
+                    rooms: [
+                        { id: 'kampar', name: 'Ruangan Office Kampar', color: '#ee2e24' },
+                        { id: 'kutai-2', name: 'Ruangan Kutai Lantai 2', color: '#ff6b6b' },
+                        { id: 'kutai-3', name: 'Ruangan Kutai Lantai 3', color: '#ff8787' },
+                        { id: 'wiyung-2', name: 'Ruangan Office Wiyung Lantai 2', color: '#ffa5a5' }
+                    ]
+                },
+                'tangerang': {
+                    name: 'Tangerang',
+                    rooms: [
+                        { id: 'meeting-2', name: 'Ruangan Meeting Lantai 2', color: '#c92a2a' },
+                        { id: 'interview-3', name: 'Ruangan Interview Lantai 3', color: '#e03131' }
+                    ]
+                }
+            };
+            
+            const getAllRooms = () => {
+                const allRooms = [];
+                Object.keys(hubs).forEach(hubKey => {
+                    hubs[hubKey].rooms.forEach(room => {
+                        allRooms.push({
+                            ...room,
+                            hubKey: hubKey,
+                            hubName: hubs[hubKey].name
+                        });
+                    });
+                });
+                return allRooms;
+            };
+            
+            const getAvailableRooms = () => {
+                if (!formData.hub) return [];
+                return hubs[formData.hub].rooms;
+            };
+            
+            const getRoomInfo = (roomId) => {
+                const allRooms = getAllRooms();
+                return allRooms.find(room => room.id === roomId);
+            };
+            
+            const timeSlots = [];
+            for (let i = 7; i <= 20; i++) {
+                timeSlots.push(`${i.toString().padStart(2, '0')}:00`);
+                if (i < 20) timeSlots.push(`${i.toString().padStart(2, '0')}:30`);
+            }
+            
+            useEffect(() => {
+                const savedBookings = localStorage.getItem('roomBookings');
+                if (savedBookings) {
+                    setBookings(JSON.parse(savedBookings));
+                }
+            }, []);
+            
+            useEffect(() => {
+                if (bookings.length > 0) {
+                    localStorage.setItem('roomBookings', JSON.stringify(bookings));
+                }
+            }, [bookings]);
+            
+            const handleInputChange = (e) => {
+                const { name, value } = e.target;
+                
+                // Reset room selection when hub changes
+                if (name === 'hub') {
+                    setFormData(prev => ({
+                        ...prev,
+                        hub: value,
+                        ruangan: ''
+                    }));
+                } else {
+                    setFormData(prev => ({
+                        ...prev,
+                        [name]: value
+                    }));
+                }
+            };
+            
+            const checkAvailability = (ruangan, tanggal, jamMulai, jamSelesai) => {
+                return !bookings.some(booking => 
+                    booking.ruangan === ruangan &&
+                    booking.tanggal === tanggal &&
+                    ((jamMulai >= booking.jamMulai && jamMulai < booking.jamSelesai) ||
+                     (jamSelesai > booking.jamMulai && jamSelesai <= booking.jamSelesai) ||
+                     (jamMulai <= booking.jamMulai && jamSelesai >= booking.jamSelesai))
+                );
+            };
+            
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                
+                if (!formData.pemohon || !formData.hub || !formData.ruangan || !formData.tanggal || 
+                    !formData.jamMulai || !formData.jamSelesai || !formData.kegiatan) {
+                    setMessage({ text: 'Mohon lengkapi semua field!', type: 'error' });
+                    return;
+                }
+                
+                if (formData.jamMulai >= formData.jamSelesai) {
+                    setMessage({ text: 'Jam selesai harus lebih besar dari jam mulai!', type: 'error' });
+                    return;
+                }
+                
+                if (!checkAvailability(formData.ruangan, formData.tanggal, formData.jamMulai, formData.jamSelesai)) {
+                    setMessage({ text: 'Ruangan sudah dibooking pada waktu tersebut!', type: 'error' });
+                    return;
+                }
+                
+                const roomInfo = getRoomInfo(formData.ruangan);
+                const newBooking = {
+                    id: Date.now(),
+                    ...formData,
+                    roomName: roomInfo.name,
+                    hubName: roomInfo.hubName,
+                    roomColor: roomInfo.color
+                };
+                
+                setBookings(prev => [...prev, newBooking]);
+                setMessage({ text: 'Booking berhasil dibuat!', type: 'success' });
+                
+                setFormData({
+                    pemohon: '',
+                    hub: '',
+                    ruangan: '',
+                    tanggal: '',
+                    jamMulai: '',
+                    jamSelesai: '',
+                    kegiatan: ''
+                });
+                
+                setTimeout(() => setMessage({ text: '', type: '' }), 3000);
+            };
+            
+            const deleteBooking = (id) => {
+                setBookings(prev => prev.filter(booking => booking.id !== id));
+                setMessage({ text: 'Booking berhasil dihapus!', type: 'success' });
+                setTimeout(() => setMessage({ text: '', type: '' }), 3000);
+            };
+            
+            const getRoomAvailability = (roomId) => {
+                if (!formData.tanggal || !formData.jamMulai || !formData.jamSelesai) {
+                    return { available: true, message: 'Pilih tanggal dan waktu untuk cek ketersediaan' };
+                }
+                
+                const isAvailable = checkAvailability(roomId, formData.tanggal, formData.jamMulai, formData.jamSelesai);
+                
+                if (isAvailable) {
+                    return { available: true, message: 'Tersedia' };
+                } else {
+                    const conflictBooking = bookings.find(booking => 
+                        booking.ruangan === roomId &&
+                        booking.tanggal === formData.tanggal &&
+                        ((formData.jamMulai >= booking.jamMulai && formData.jamMulai < booking.jamSelesai) ||
+                         (formData.jamSelesai > booking.jamMulai && formData.jamSelesai <= booking.jamSelesai) ||
+                         (formData.jamMulai <= booking.jamMulai && formData.jamSelesai >= booking.jamSelesai))
+                    );
+                    return { 
+                        available: false, 
+                        message: `Dibooking: ${conflictBooking.jamMulai} - ${conflictBooking.jamSelesai}` 
+                    };
+                }
+            };
+            
+            const getTodayDate = () => {
+                const today = new Date();
+                return today.toISOString().split('T')[0];
+            };
+            
+            const getMonthData = (year, month) => {
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                const daysInMonth = lastDay.getDate();
+                const startingDayOfWeek = firstDay.getDay();
+                
+                const days = [];
+                
+                // Previous month days
+                const prevMonthLastDay = new Date(year, month, 0).getDate();
+                for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+                    days.push({
+                        date: prevMonthLastDay - i,
+                        isCurrentMonth: false,
+                        fullDate: new Date(year, month - 1, prevMonthLastDay - i)
+                    });
+                }
+                
+                // Current month days
+                for (let i = 1; i <= daysInMonth; i++) {
+                    days.push({
+                        date: i,
+                        isCurrentMonth: true,
+                        fullDate: new Date(year, month, i)
+                    });
+                }
+                
+                // Next month days
+                const remainingDays = 42 - days.length; // 6 rows * 7 days
+                for (let i = 1; i <= remainingDays; i++) {
+                    days.push({
+                        date: i,
+                        isCurrentMonth: false,
+                        fullDate: new Date(year, month + 1, i)
+                    });
+                }
+                
+                return days;
+            };
+            
+            const getBookingsForDate = (date) => {
+                const dateStr = date.toISOString().split('T')[0];
+                return bookings.filter(booking => booking.tanggal === dateStr);
+            };
+            
+            const isToday = (date) => {
+                const today = new Date();
+                return date.getDate() === today.getDate() &&
+                       date.getMonth() === today.getMonth() &&
+                       date.getFullYear() === today.getFullYear();
+            };
+            
+            const handlePrevMonth = () => {
+                setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+            };
+            
+            const handleNextMonth = () => {
+                setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+            };
+            
+            const handleDayClick = (date) => {
+                const dayBookings = getBookingsForDate(date);
+                if (dayBookings.length > 0) {
+                    setSelectedDate(date);
+                    setShowModal(true);
+                }
+            };
+            
+            const closeModal = () => {
+                setShowModal(false);
+                setSelectedDate(null);
+            };
+
+            return (
+                <div className="container">
+                    <div className="header">
+                        <img 
+                            src="LOGO_-_Salin.png" 
+                            alt="Laritta Bakery Logo" 
+                            className="header-logo"
+                        />
+                        <h1>📅 Sistem Booking Ruangan</h1>
+                        <p>Kelola pemesanan ruangan kantor dengan mudah</p>
+                    </div>
+                    
+                    {message.text && (
+                        <div className={`alert alert-${message.type}`}>
+                            {message.text}
+                        </div>
+                    )}
+                    
+                    <div className="main-content">
+                        <div className="booking-form">
+                            <h2>Form Booking</h2>
+                            <form onSubmit={handleSubmit}>
+                                <div className="form-group">
+                                    <label>Nama Pemohon *</label>
+                                    <input
+                                        type="text"
+                                        name="pemohon"
+                                        value={formData.pemohon}
+                                        onChange={handleInputChange}
+                                        placeholder="Masukkan nama pemohon"
+                                    />
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label>Pilih Hub/Lokasi *</label>
+                                    <select
+                                        name="hub"
+                                        value={formData.hub}
+                                        onChange={handleInputChange}
+                                    >
+                                        <option value="">-- Pilih Hub --</option>
+                                        {Object.keys(hubs).map(hubKey => (
+                                            <option key={hubKey} value={hubKey}>
+                                                {hubs[hubKey].name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label>Pilih Ruangan *</label>
+                                    <select
+                                        name="ruangan"
+                                        value={formData.ruangan}
+                                        onChange={handleInputChange}
+                                        disabled={!formData.hub}
+                                    >
+                                        <option value="">
+                                            {formData.hub ? '-- Pilih Ruangan --' : '-- Pilih Hub Terlebih Dahulu --'}
+                                        </option>
+                                        {getAvailableRooms().map(room => (
+                                            <option key={room.id} value={room.id}>
+                                                {room.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label>Tanggal *</label>
+                                    <input
+                                        type="date"
+                                        name="tanggal"
+                                        value={formData.tanggal}
+                                        onChange={handleInputChange}
+                                        min={getTodayDate()}
+                                    />
+                                </div>
+                                
+                                <div className="time-range">
+                                    <div className="form-group">
+                                        <label>Jam Mulai *</label>
+                                        <select
+                                            name="jamMulai"
+                                            value={formData.jamMulai}
+                                            onChange={handleInputChange}
+                                        >
+                                            <option value="">-- Pilih --</option>
+                                            {timeSlots.map(time => (
+                                                <option key={time} value={time}>{time}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    
+                                    <div className="form-group">
+                                        <label>Jam Selesai *</label>
+                                        <select
+                                            name="jamSelesai"
+                                            value={formData.jamSelesai}
+                                            onChange={handleInputChange}
+                                        >
+                                            <option value="">-- Pilih --</option>
+                                            {timeSlots.map(time => (
+                                                <option key={time} value={time}>{time}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label>Kegiatan *</label>
+                                    <textarea
+                                        name="kegiatan"
+                                        value={formData.kegiatan}
+                                        onChange={handleInputChange}
+                                        placeholder="Jelaskan kegiatan yang akan dilakukan"
+                                        rows="3"
+                                    ></textarea>
+                                </div>
+                                
+                                <button type="submit" className="btn">
+                                    🎯 Booking Sekarang
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <div className="availability-panel">
+                            <h2>Ketersediaan Ruangan</h2>
+                            {!formData.hub ? (
+                                <p style={{textAlign: 'center', color: '#999', padding: '40px'}}>
+                                    Pilih Hub/Lokasi terlebih dahulu untuk melihat ketersediaan ruangan
+                                </p>
+                            ) : (
+                                <>
+                                    <h3 style={{color: '#F77F00', marginBottom: '15px', fontSize: '1.1em'}}>
+                                        📍 {hubs[formData.hub].name}
+                                    </h3>
+                                    {getAvailableRooms().map(room => {
+                                        const availability = getRoomAvailability(room.id);
+                                        return (
+                                            <div key={room.id} className="room-card">
+                                                <h3>{room.name}</h3>
+                                                <span className={`room-status ${availability.available ? 'status-available' : 'status-booked'}`}>
+                                                    {availability.available ? '✓ ' : '✗ '}{availability.message}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                    <p style={{marginTop: '20px', color: '#666', fontSize: '0.9em'}}>
+                                        💡 Pilih tanggal dan waktu di form untuk mengecek ketersediaan
+                                    </p>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                    
+                    <div className="view-toggle">
+                        <button 
+                            className={`toggle-btn ${viewMode === 'calendar' ? 'active' : ''}`}
+                            onClick={() => setViewMode('calendar')}
+                        >
+                            📅 Tampilan Kalender
+                        </button>
+                        <button 
+                            className={`toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
+                            onClick={() => setViewMode('list')}
+                        >
+                            📋 Tampilan List
+                        </button>
+                    </div>
+                    
+                    {viewMode === 'calendar' ? (
+                        <div className="calendar-container">
+                            <div className="calendar-header">
+                                <h2>Kalender Booking</h2>
+                                <div className="calendar-nav">
+                                    <button className="nav-btn" onClick={handlePrevMonth}>
+                                        ← Prev
+                                    </button>
+                                    <div className="current-month">
+                                        {currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                                    </div>
+                                    <button className="nav-btn" onClick={handleNextMonth}>
+                                        Next →
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div className="calendar-grid">
+                                {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map(day => (
+                                    <div key={day} className="calendar-day-header">{day}</div>
+                                ))}
+                                
+                                {getMonthData(currentDate.getFullYear(), currentDate.getMonth()).map((day, index) => {
+                                    const dayBookings = getBookingsForDate(day.fullDate);
+                                    const isTodayDate = isToday(day.fullDate);
+                                    
+                                    return (
+                                        <div 
+                                            key={index}
+                                            className={`calendar-day ${!day.isCurrentMonth ? 'other-month' : ''} ${isTodayDate ? 'today' : ''}`}
+                                            onClick={() => handleDayClick(day.fullDate)}
+                                        >
+                                            <div className="day-number">{day.date}</div>
+                                            <div className="day-events">
+                                                {dayBookings.slice(0, 3).map((booking, idx) => (
+                                                    <div 
+                                                        key={idx}
+                                                        className="event-dot"
+                                                        style={{background: booking.roomColor}}
+                                                        title={`${booking.jamMulai} - ${booking.roomName}`}
+                                                    >
+                                                        {booking.jamMulai}
+                                                    </div>
+                                                ))}
+                                                {dayBookings.length > 3 && (
+                                                    <div className="event-dot" style={{background: '#999'}}>
+                                                        +{dayBookings.length - 3} lagi
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            
+                            <div style={{marginTop: '20px'}}>
+                                <h3 style={{color: '#ee2e24', marginBottom: '15px', fontSize: '1.2em'}}>Legenda Ruangan:</h3>
+                                {Object.keys(hubs).map(hubKey => (
+                                    <div key={hubKey} style={{marginBottom: '15px'}}>
+                                        <h4 style={{color: '#F77F00', marginBottom: '10px', fontSize: '1em'}}>
+                                            📍 {hubs[hubKey].name}
+                                        </h4>
+                                        <div style={{display: 'flex', gap: '15px', flexWrap: 'wrap', marginLeft: '15px'}}>
+                                            {hubs[hubKey].rooms.map(room => (
+                                                <div key={room.id} style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                                    <div style={{width: '20px', height: '20px', background: room.color, borderRadius: '4px'}}></div>
+                                                    <span style={{fontSize: '0.9em'}}>{room.name}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="bookings-section">
+                            <h2>Daftar Booking ({bookings.length})</h2>
+                            {bookings.length === 0 ? (
+                                <p style={{textAlign: 'center', color: '#999', padding: '40px'}}>
+                                    Belum ada booking. Silakan buat booking baru!
+                                </p>
+                            ) : (
+                                bookings.sort((a, b) => {
+                                    if (a.tanggal !== b.tanggal) return a.tanggal.localeCompare(b.tanggal);
+                                    return a.jamMulai.localeCompare(b.jamMulai);
+                                }).map(booking => (
+                                    <div key={booking.id} className="booking-item">
+                                        <div className="booking-header">
+                                            <div>
+                                                <span className="booking-room">{booking.roomName}</span>
+                                                <div style={{fontSize: '0.85em', color: '#F77F00', fontWeight: '600', marginTop: '5px'}}>
+                                                    📍 {booking.hubName}
+                                                </div>
+                                            </div>
+                                            <button 
+                                                className="delete-btn"
+                                                onClick={() => deleteBooking(booking.id)}
+                                            >
+                                                🗑️ Hapus
+                                            </button>
+                                        </div>
+                                        <div className="booking-details">
+                                            <div>👤 <strong>Pemohon:</strong> {booking.pemohon}</div>
+                                            <div>📅 <strong>Tanggal:</strong> {new Date(booking.tanggal + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                                            <div>🕐 <strong>Waktu:</strong> {booking.jamMulai} - {booking.jamSelesai}</div>
+                                            <div>📝 <strong>Kegiatan:</strong> {booking.kegiatan}</div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    )}
+                    
+                    {/* Modal for day details */}
+                    <div className={`modal ${showModal ? 'show' : ''}`} onClick={closeModal}>
+                        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h3>
+                                    {selectedDate && selectedDate.toLocaleDateString('id-ID', { 
+                                        weekday: 'long', 
+                                        year: 'numeric', 
+                                        month: 'long', 
+                                        day: 'numeric' 
+                                    })}
+                                </h3>
+                                <button className="close-btn" onClick={closeModal}>×</button>
+                            </div>
+                            
+                            {selectedDate && getBookingsForDate(selectedDate).map(booking => (
+                                <div key={booking.id} className="modal-event">
+                                    <div className="modal-event-header">
+                                        {booking.roomName}
+                                        <div style={{fontSize: '0.85em', color: '#F77F00', fontWeight: '600', marginTop: '5px'}}>
+                                            📍 {booking.hubName}
+                                        </div>
+                                    </div>
+                                    <div className="modal-event-detail">
+                                        <div>👤 <strong>Pemohon:</strong> {booking.pemohon}</div>
+                                        <div>🕐 <strong>Waktu:</strong> {booking.jamMulai} - {booking.jamSelesai}</div>
+                                        <div>📝 <strong>Kegiatan:</strong> {booking.kegiatan}</div>
+                                    </div>
+                                    <button 
+                                        className="delete-btn"
+                                        style={{marginTop: '10px', width: 'auto', padding: '8px 15px'}}
+                                        onClick={() => {
+                                            deleteBooking(booking.id);
+                                            if (getBookingsForDate(selectedDate).length <= 1) {
+                                                closeModal();
+                                            }
+                                        }}
+                                    >
+                                        🗑️ Hapus Booking
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
