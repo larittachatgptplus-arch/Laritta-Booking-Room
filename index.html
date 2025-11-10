@@ -495,6 +495,16 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        // ========================================
+        // GOOGLE SHEETS API CONFIGURATION
+        // ========================================
+        // PENTING: Ganti URL ini dengan Web App URL dari Google Apps Script Anda
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby7tyigsfyEUEy6JReh_8roeXqVIPi8dn0VyVxtsDR852I7Oebwp9Dwi8w1be8NazDo/exec';
+        
+        // Jika sudah setup, ganti 'https://script.google.com/macros/s/AKfycby7tyigsfyEUEy6JReh_8roeXqVIPi8dn0VyVxtsDR852I7Oebwp9Dwi8w1be8NazDo/exec' dengan URL yang didapat dari deploy Apps Script
+        // Contoh: 'https://script.google.com/macros/s/AKfycbxxx.../exec'
+        // ========================================
+
         function App() {
             const [formData, setFormData] = useState({
                 pemohon: '',
@@ -563,17 +573,89 @@
             }
             
             useEffect(() => {
-                const savedBookings = localStorage.getItem('roomBookings');
-                if (savedBookings) {
-                    setBookings(JSON.parse(savedBookings));
-                }
+                // Load bookings from Google Sheets
+                loadBookingsFromSheet();
             }, []);
             
-            useEffect(() => {
-                if (bookings.length > 0) {
-                    localStorage.setItem('roomBookings', JSON.stringify(bookings));
+            // Google Sheets API Functions
+            const loadBookingsFromSheet = async () => {
+                try {
+                    const response = await fetch(GOOGLE_SCRIPT_URL + '?action=getBookings', {
+                        method: 'POST'
+                    });
+                    const result = await response.json();
+                    
+                    if (result.status === 'success') {
+                        setBookings(result.data);
+                    } else {
+                        console.error('Error loading bookings:', result.message);
+                    }
+                } catch (error) {
+                    console.error('Error connecting to Google Sheets:', error);
+                    setMessage({ 
+                        text: 'Tidak dapat terhubung ke server. Pastikan Google Apps Script sudah di-deploy dengan benar.', 
+                        type: 'error' 
+                    });
                 }
-            }, [bookings]);
+            };
+            
+            const saveBookingToSheet = async (bookingData) => {
+                try {
+                    const formData = new FormData();
+                    formData.append('action', 'addBooking');
+                    formData.append('data', JSON.stringify(bookingData));
+                    
+                    const response = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+                    
+                    if (result.status === 'success') {
+                        // Reload bookings from sheet
+                        await loadBookingsFromSheet();
+                        setMessage({ text: 'Booking berhasil dibuat!', type: 'success' });
+                        setTimeout(() => setMessage({ text: '', type: '' }), 3000);
+                        return true;
+                    } else {
+                        setMessage({ text: 'Gagal menyimpan booking: ' + result.message, type: 'error' });
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('Error saving booking:', error);
+                    setMessage({ text: 'Gagal menyimpan booking. Cek koneksi internet.', type: 'error' });
+                    return false;
+                }
+            };
+            
+            const deleteBookingFromSheet = async (id) => {
+                try {
+                    const formData = new FormData();
+                    formData.append('action', 'deleteBooking');
+                    formData.append('id', id);
+                    
+                    const response = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+                    
+                    if (result.status === 'success') {
+                        // Reload bookings from sheet
+                        await loadBookingsFromSheet();
+                        setMessage({ text: 'Booking berhasil dihapus!', type: 'success' });
+                        setTimeout(() => setMessage({ text: '', type: '' }), 3000);
+                        return true;
+                    } else {
+                        setMessage({ text: 'Gagal menghapus booking: ' + result.message, type: 'error' });
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('Error deleting booking:', error);
+                    setMessage({ text: 'Gagal menghapus booking. Cek koneksi internet.', type: 'error' });
+                    return false;
+                }
+            };
             
             const handleInputChange = (e) => {
                 const { name, value } = e.target;
@@ -603,7 +685,7 @@
                 );
             };
             
-            const handleSubmit = (e) => {
+            const handleSubmit = async (e) => {
                 e.preventDefault();
                 
                 if (!formData.pemohon || !formData.hub || !formData.ruangan || !formData.tanggal || 
@@ -624,33 +706,36 @@
                 
                 const roomInfo = getRoomInfo(formData.ruangan);
                 const newBooking = {
-                    id: Date.now(),
-                    ...formData,
+                    pemohon: formData.pemohon,
+                    hub: formData.hub,
+                    ruangan: formData.ruangan,
                     roomName: roomInfo.name,
+                    tanggal: formData.tanggal,
+                    jamMulai: formData.jamMulai,
+                    jamSelesai: formData.jamSelesai,
+                    kegiatan: formData.kegiatan,
                     hubName: roomInfo.hubName,
                     roomColor: roomInfo.color
                 };
                 
-                setBookings(prev => [...prev, newBooking]);
-                setMessage({ text: 'Booking berhasil dibuat!', type: 'success' });
+                // Save to Google Sheets
+                const success = await saveBookingToSheet(newBooking);
                 
-                setFormData({
-                    pemohon: '',
-                    hub: '',
-                    ruangan: '',
-                    tanggal: '',
-                    jamMulai: '',
-                    jamSelesai: '',
-                    kegiatan: ''
-                });
-                
-                setTimeout(() => setMessage({ text: '', type: '' }), 3000);
+                if (success) {
+                    setFormData({
+                        pemohon: '',
+                        hub: '',
+                        ruangan: '',
+                        tanggal: '',
+                        jamMulai: '',
+                        jamSelesai: '',
+                        kegiatan: ''
+                    });
+                }
             };
             
-            const deleteBooking = (id) => {
-                setBookings(prev => prev.filter(booking => booking.id !== id));
-                setMessage({ text: 'Booking berhasil dihapus!', type: 'success' });
-                setTimeout(() => setMessage({ text: '', type: '' }), 3000);
+            const deleteBooking = async (id) => {
+                await deleteBookingFromSheet(id);
             };
             
             const getRoomAvailability = (roomId) => {
