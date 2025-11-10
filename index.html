@@ -354,6 +354,17 @@
             background: #FFF8F0;
         }
         
+        .calendar-day.has-bookings {
+            background: #fff5f5;
+            border-color: #ee2e24;
+            font-weight: 600;
+        }
+        
+        .calendar-day.has-bookings:hover {
+            background: #ffe5e5;
+            transform: scale(1.02);
+        }
+        
         .day-number {
             font-weight: 700;
             color: #333;
@@ -586,7 +597,14 @@
                     const result = await response.json();
                     
                     if (result.status === 'success') {
-                        setBookings(result.data);
+                        // Normalize tanggal format for all bookings
+                        const normalizedBookings = result.data.map(booking => ({
+                            ...booking,
+                            tanggal: formatDateFromSheet(booking.tanggal)
+                        }));
+                        
+                        console.log('Loaded bookings:', normalizedBookings.length);
+                        setBookings(normalizedBookings);
                     } else {
                         console.error('Error loading bookings:', result.message);
                     }
@@ -767,6 +785,50 @@
                 return today.toISOString().split('T')[0];
             };
             
+            // Helper function to format date from Google Sheets
+            const formatDateFromSheet = (dateStr) => {
+                if (!dateStr) return 'Invalid Date';
+                
+                // If dateStr is already in YYYY-MM-DD format
+                if (typeof dateStr === 'string' && dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    return dateStr;
+                }
+                
+                // If it's a Date object or timestamp
+                try {
+                    const date = new Date(dateStr);
+                    if (!isNaN(date.getTime())) {
+                        return date.toISOString().split('T')[0];
+                    }
+                } catch (e) {
+                    console.error('Error parsing date:', e);
+                }
+                
+                return dateStr;
+            };
+            
+            // Helper function to display date in Indonesian format
+            const displayDate = (dateStr) => {
+                try {
+                    const formattedDate = formatDateFromSheet(dateStr);
+                    const date = new Date(formattedDate + 'T00:00:00');
+                    
+                    if (isNaN(date.getTime())) {
+                        return 'Invalid Date';
+                    }
+                    
+                    return date.toLocaleDateString('id-ID', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    });
+                } catch (e) {
+                    console.error('Error displaying date:', e);
+                    return 'Invalid Date';
+                }
+            };
+            
             const getMonthData = (year, month) => {
                 const firstDay = new Date(year, month, 1);
                 const lastDay = new Date(year, month + 1, 0);
@@ -809,7 +871,12 @@
             
             const getBookingsForDate = (date) => {
                 const dateStr = date.toISOString().split('T')[0];
-                return bookings.filter(booking => booking.tanggal === dateStr);
+                const matchedBookings = bookings.filter(booking => {
+                    // Tanggal sudah dinormalisasi saat load, jadi bisa langsung compare
+                    return booking.tanggal === dateStr;
+                });
+                
+                return matchedBookings;
             };
             
             const isToday = (date) => {
@@ -1036,11 +1103,12 @@
                                 {getMonthData(currentDate.getFullYear(), currentDate.getMonth()).map((day, index) => {
                                     const dayBookings = getBookingsForDate(day.fullDate);
                                     const isTodayDate = isToday(day.fullDate);
+                                    const hasBookings = dayBookings.length > 0;
                                     
                                     return (
                                         <div 
                                             key={index}
-                                            className={`calendar-day ${!day.isCurrentMonth ? 'other-month' : ''} ${isTodayDate ? 'today' : ''}`}
+                                            className={`calendar-day ${!day.isCurrentMonth ? 'other-month' : ''} ${isTodayDate ? 'today' : ''} ${hasBookings ? 'has-bookings' : ''}`}
                                             onClick={() => handleDayClick(day.fullDate)}
                                         >
                                             <div className="day-number">{day.date}</div>
@@ -1114,7 +1182,7 @@
                                         </div>
                                         <div className="booking-details">
                                             <div>👤 <strong>Pemohon:</strong> {booking.pemohon}</div>
-                                            <div>📅 <strong>Tanggal:</strong> {new Date(booking.tanggal + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                                            <div>📅 <strong>Tanggal:</strong> {displayDate(booking.tanggal)}</div>
                                             <div>🕐 <strong>Waktu:</strong> {booking.jamMulai} - {booking.jamSelesai}</div>
                                             <div>📝 <strong>Kegiatan:</strong> {booking.kegiatan}</div>
                                         </div>
