@@ -475,6 +475,70 @@
             line-height: 1.8;
         }
         
+        /* Collapsible Section Styles */
+        .bookings-group {
+            margin-bottom: 30px;
+        }
+        
+        .bookings-group-header {
+            background: linear-gradient(135deg, #ee2e24 0%, #F77F00 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(238, 46, 36, 0.2);
+            user-select: none;
+        }
+        
+        .bookings-group-header:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(238, 46, 36, 0.3);
+        }
+        
+        .bookings-group-header.past {
+            background: linear-gradient(135deg, #999 0%, #666 100%);
+        }
+        
+        .bookings-group-header h3 {
+            margin: 0;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .toggle-icon {
+            font-size: 1.5em;
+            transition: transform 0.3s;
+        }
+        
+        .toggle-icon.expanded {
+            transform: rotate(180deg);
+        }
+        
+        .bookings-group-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out;
+            padding: 0 5px;
+        }
+        
+        .bookings-group-content.expanded {
+            max-height: 10000px;
+            transition: max-height 0.5s ease-in;
+            padding: 20px 5px;
+        }
+        
+        .booking-item.past {
+            opacity: 0.7;
+            background: #f9f9f9;
+            border-left-color: #999;
+        }
+        
         @media (max-width: 968px) {
             .main-content {
                 grid-template-columns: 1fr;
@@ -510,9 +574,9 @@
         // GOOGLE SHEETS API CONFIGURATION
         // ========================================
         // PENTING: Ganti URL ini dengan Web App URL dari Google Apps Script Anda
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxO4MIKPcE6mEegktSyWB0Ikl8Fzrd-C1guEP3g8HDCkL6a8mJGMW6sELZCLk1qIA76/exec';
+        const GOOGLE_SCRIPT_URL = 'PASTE_WEB_APP_URL_ANDA_DISINI';
         
-        // Jika sudah setup, ganti 'https://script.google.com/macros/s/AKfycbxO4MIKPcE6mEegktSyWB0Ikl8Fzrd-C1guEP3g8HDCkL6a8mJGMW6sELZCLk1qIA76/exec' dengan URL yang didapat dari deploy Apps Script
+        // Jika sudah setup, ganti 'PASTE_WEB_APP_URL_ANDA_DISINI' dengan URL yang didapat dari deploy Apps Script
         // Contoh: 'https://script.google.com/macros/s/AKfycbxxx.../exec'
         // ========================================
 
@@ -533,6 +597,7 @@
             const [currentDate, setCurrentDate] = useState(new Date());
             const [selectedDate, setSelectedDate] = useState(null);
             const [showModal, setShowModal] = useState(false);
+            const [showPastBookings, setShowPastBookings] = useState(false); // Toggle past bookings
             
             const hubs = {
                 'surabaya': {
@@ -1155,40 +1220,130 @@
                         </div>
                     ) : (
                         <div className="bookings-section">
-                            <h2>Daftar Booking ({bookings.length})</h2>
-                            {bookings.length === 0 ? (
-                                <p style={{textAlign: 'center', color: '#999', padding: '40px'}}>
-                                    Belum ada booking. Silakan buat booking baru!
-                                </p>
-                            ) : (
-                                bookings.sort((a, b) => {
+                            {(() => {
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                
+                                const upcomingBookings = bookings.filter(booking => {
+                                    const bookingDate = new Date(booking.tanggal);
+                                    bookingDate.setHours(0, 0, 0, 0);
+                                    return bookingDate >= today;
+                                }).sort((a, b) => {
                                     if (a.tanggal !== b.tanggal) return a.tanggal.localeCompare(b.tanggal);
                                     return a.jamMulai.localeCompare(b.jamMulai);
-                                }).map(booking => (
-                                    <div key={booking.id} className="booking-item">
-                                        <div className="booking-header">
-                                            <div>
-                                                <span className="booking-room">{booking.roomName}</span>
-                                                <div style={{fontSize: '0.85em', color: '#F77F00', fontWeight: '600', marginTop: '5px'}}>
-                                                    📍 {booking.hubName}
+                                });
+                                
+                                const pastBookings = bookings.filter(booking => {
+                                    const bookingDate = new Date(booking.tanggal);
+                                    bookingDate.setHours(0, 0, 0, 0);
+                                    return bookingDate < today;
+                                }).sort((a, b) => {
+                                    if (a.tanggal !== b.tanggal) return b.tanggal.localeCompare(a.tanggal);
+                                    return b.jamMulai.localeCompare(a.jamMulai);
+                                });
+                                
+                                return (
+                                    <>
+                                        {/* Upcoming Bookings */}
+                                        <div className="bookings-group">
+                                            <div 
+                                                className="bookings-group-header"
+                                                style={{cursor: 'default'}}
+                                            >
+                                                <h3>
+                                                    📅 Booking Mendatang ({upcomingBookings.length})
+                                                </h3>
+                                            </div>
+                                            <div className="bookings-group-content expanded">
+                                                {upcomingBookings.length === 0 ? (
+                                                    <p style={{textAlign: 'center', color: '#999', padding: '40px'}}>
+                                                        Tidak ada booking mendatang
+                                                    </p>
+                                                ) : (
+                                                    upcomingBookings.map(booking => (
+                                                        <div key={booking.id} className="booking-item">
+                                                            <div className="booking-header">
+                                                                <div>
+                                                                    <span className="booking-room">{booking.roomName}</span>
+                                                                    <div style={{fontSize: '0.85em', color: '#F77F00', fontWeight: '600', marginTop: '5px'}}>
+                                                                        📍 {booking.hubName}
+                                                                    </div>
+                                                                </div>
+                                                                <button 
+                                                                    className="delete-btn"
+                                                                    onClick={() => deleteBooking(booking.id)}
+                                                                >
+                                                                    🗑️ Hapus
+                                                                </button>
+                                                            </div>
+                                                            <div className="booking-details">
+                                                                <div>👤 <strong>Pemohon:</strong> {booking.pemohon}</div>
+                                                                <div>📅 <strong>Tanggal:</strong> {displayDate(booking.tanggal)}</div>
+                                                                <div>🕐 <strong>Waktu:</strong> {booking.jamMulai} - {booking.jamSelesai}</div>
+                                                                <div>📝 <strong>Kegiatan:</strong> {booking.kegiatan}</div>
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Past Bookings - Collapsible */}
+                                        {pastBookings.length > 0 && (
+                                            <div className="bookings-group">
+                                                <div 
+                                                    className="bookings-group-header past"
+                                                    onClick={() => setShowPastBookings(!showPastBookings)}
+                                                    title="Klik untuk tampilkan/sembunyikan booking yang sudah lewat"
+                                                >
+                                                    <h3>
+                                                        🕐 Booking Sudah Lewat ({pastBookings.length}) 
+                                                        <span style={{fontSize: '0.7em', opacity: 0.8, fontWeight: 'normal'}}>
+                                                            {showPastBookings ? '(Klik untuk sembunyikan)' : '(Klik untuk tampilkan)'}
+                                                        </span>
+                                                    </h3>
+                                                    <span className={`toggle-icon ${showPastBookings ? 'expanded' : ''}`}>
+                                                        ▼
+                                                    </span>
+                                                </div>
+                                                <div className={`bookings-group-content ${showPastBookings ? 'expanded' : ''}`}>
+                                                    {pastBookings.map(booking => (
+                                                        <div key={booking.id} className="booking-item past">
+                                                            <div className="booking-header">
+                                                                <div>
+                                                                    <span className="booking-room">{booking.roomName}</span>
+                                                                    <div style={{fontSize: '0.85em', color: '#999', fontWeight: '600', marginTop: '5px'}}>
+                                                                        📍 {booking.hubName}
+                                                                    </div>
+                                                                </div>
+                                                                <button 
+                                                                    className="delete-btn"
+                                                                    onClick={() => deleteBooking(booking.id)}
+                                                                    style={{background: '#999'}}
+                                                                >
+                                                                    🗑️ Hapus
+                                                                </button>
+                                                            </div>
+                                                            <div className="booking-details">
+                                                                <div>👤 <strong>Pemohon:</strong> {booking.pemohon}</div>
+                                                                <div>📅 <strong>Tanggal:</strong> {displayDate(booking.tanggal)}</div>
+                                                                <div>🕐 <strong>Waktu:</strong> {booking.jamMulai} - {booking.jamSelesai}</div>
+                                                                <div>📝 <strong>Kegiatan:</strong> {booking.kegiatan}</div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             </div>
-                                            <button 
-                                                className="delete-btn"
-                                                onClick={() => deleteBooking(booking.id)}
-                                            >
-                                                🗑️ Hapus
-                                            </button>
-                                        </div>
-                                        <div className="booking-details">
-                                            <div>👤 <strong>Pemohon:</strong> {booking.pemohon}</div>
-                                            <div>📅 <strong>Tanggal:</strong> {displayDate(booking.tanggal)}</div>
-                                            <div>🕐 <strong>Waktu:</strong> {booking.jamMulai} - {booking.jamSelesai}</div>
-                                            <div>📝 <strong>Kegiatan:</strong> {booking.kegiatan}</div>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
+                                        )}
+                                        
+                                        {bookings.length === 0 && (
+                                            <p style={{textAlign: 'center', color: '#999', padding: '40px'}}>
+                                                Belum ada booking. Silakan buat booking baru!
+                                            </p>
+                                        )}
+                                    </>
+                                );
+                            })()}
                         </div>
                     )}
                     
