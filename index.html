@@ -691,9 +691,9 @@
         // GOOGLE SHEETS API CONFIGURATION
         // ========================================
         // PENTING: Ganti URL ini dengan Web App URL dari Google Apps Script Anda
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyvGMNmVwoX_Ml4TpvRcK83dTCEEj7ZPzFTLY79KSg0hQIoclHMwqnSWNGufhpl_3iBTw/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxO4MIKPcE6mEegktSyWB0Ikl8Fzrd-C1guEP3g8HDCkL6a8mJGMW6sELZCLk1qIA76/exec';
         
-        // Jika sudah setup, ganti 'https://script.google.com/macros/s/AKfycbyvGMNmVwoX_Ml4TpvRcK83dTCEEj7ZPzFTLY79KSg0hQIoclHMwqnSWNGufhpl_3iBTw/exec' dengan URL yang didapat dari deploy Apps Script
+        // Jika sudah setup, ganti 'https://script.google.com/macros/s/AKfycbxO4MIKPcE6mEegktSyWB0Ikl8Fzrd-C1guEP3g8HDCkL6a8mJGMW6sELZCLk1qIA76/exec' dengan URL yang didapat dari deploy Apps Script
         // Contoh: 'https://script.google.com/macros/s/AKfycbxxx.../exec'
         // ========================================
 
@@ -1408,6 +1408,90 @@
                                     return b.jamMulai.localeCompare(a.jamMulai);
                                 });
                                 
+                                const upcomingGrouped = groupBookingsByHubAndRoom(upcomingBookings);
+                                const pastGrouped = groupBookingsByHubAndRoom(pastBookings);
+                                
+                                const renderBookingsByHub = (grouped, isPast = false) => {
+                                    return Object.keys(grouped).map(hubKey => {
+                                        const hubData = grouped[hubKey];
+                                        const totalBookings = Object.values(hubData.rooms).reduce((sum, room) => sum + room.bookings.length, 0);
+                                        const hubToggleKey = `${hubKey}-${isPast ? 'past' : 'upcoming'}`;
+                                        const isHubExpanded = expandedHubs[hubToggleKey] || false;
+                                        
+                                        return (
+                                            <div key={hubKey} className={`hub-group ${isPast ? 'past' : ''}`}>
+                                                <div 
+                                                    className={`hub-header ${isPast ? 'past' : ''}`}
+                                                    onClick={() => toggleHub(hubKey, isPast)}
+                                                >
+                                                    <div>
+                                                        📍 <strong>{hubData.hubName}</strong> ({totalBookings} booking)
+                                                    </div>
+                                                    <span className={`toggle-icon ${isHubExpanded ? 'expanded' : ''}`}>
+                                                        ▼
+                                                    </span>
+                                                </div>
+                                                <div className={`hub-content ${isHubExpanded ? 'expanded' : ''}`}>
+                                                    {Object.keys(hubData.rooms).map(roomKey => {
+                                                        const roomData = hubData.rooms[roomKey];
+                                                        const roomToggleKey = `${hubKey}-${roomKey}-${isPast ? 'past' : 'upcoming'}`;
+                                                        const isRoomExpanded = expandedRooms[roomToggleKey] || false;
+                                                        
+                                                        return (
+                                                            <div key={roomKey} className={`room-group ${isPast ? 'past' : ''}`}>
+                                                                <div 
+                                                                    className={`room-header ${isPast ? 'past' : ''}`}
+                                                                    onClick={() => toggleRoom(hubKey, roomKey, isPast)}
+                                                                >
+                                                                    <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                                                                        <span 
+                                                                            style={{
+                                                                                width: '12px',
+                                                                                height: '12px',
+                                                                                borderRadius: '50%',
+                                                                                background: isPast ? '#999' : roomData.roomColor,
+                                                                                display: 'inline-block'
+                                                                            }}
+                                                                        ></span>
+                                                                        <span>🏢 {roomData.roomName} ({roomData.bookings.length})</span>
+                                                                    </div>
+                                                                    <span className={`toggle-icon-small ${isRoomExpanded ? 'expanded' : ''}`}>
+                                                                        ▼
+                                                                    </span>
+                                                                </div>
+                                                                <div className={`room-content ${isPast ? 'past' : ''} ${isRoomExpanded ? 'expanded' : ''}`}>
+                                                                    {roomData.bookings.map(booking => (
+                                                                        <div key={booking.id} className={`booking-item ${isPast ? 'past' : ''}`}>
+                                                                            <div className="booking-header">
+                                                                                <div>
+                                                                                    <span className="booking-room">{booking.roomName}</span>
+                                                                                </div>
+                                                                                <button 
+                                                                                    className="delete-btn"
+                                                                                    onClick={() => deleteBooking(booking.id)}
+                                                                                    style={isPast ? {background: '#999'} : {}}
+                                                                                >
+                                                                                    🗑️ Hapus
+                                                                                </button>
+                                                                            </div>
+                                                                            <div className="booking-details">
+                                                                                <div>👤 <strong>Pemohon:</strong> {booking.pemohon}</div>
+                                                                                <div>📅 <strong>Tanggal:</strong> {displayDate(booking.tanggal)}</div>
+                                                                                <div>🕐 <strong>Waktu:</strong> {booking.jamMulai} - {booking.jamSelesai}</div>
+                                                                                <div>📝 <strong>Kegiatan:</strong> {booking.kegiatan}</div>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        );
+                                    });
+                                };
+                                
                                 return (
                                     <>
                                         {/* Upcoming Bookings */}
@@ -1426,30 +1510,7 @@
                                                         Tidak ada booking mendatang
                                                     </p>
                                                 ) : (
-                                                    upcomingBookings.map(booking => (
-                                                        <div key={booking.id} className="booking-item">
-                                                            <div className="booking-header">
-                                                                <div>
-                                                                    <span className="booking-room">{booking.roomName}</span>
-                                                                    <div style={{fontSize: '0.85em', color: '#F77F00', fontWeight: '600', marginTop: '5px'}}>
-                                                                        📍 {booking.hubName}
-                                                                    </div>
-                                                                </div>
-                                                                <button 
-                                                                    className="delete-btn"
-                                                                    onClick={() => deleteBooking(booking.id)}
-                                                                >
-                                                                    🗑️ Hapus
-                                                                </button>
-                                                            </div>
-                                                            <div className="booking-details">
-                                                                <div>👤 <strong>Pemohon:</strong> {booking.pemohon}</div>
-                                                                <div>📅 <strong>Tanggal:</strong> {displayDate(booking.tanggal)}</div>
-                                                                <div>🕐 <strong>Waktu:</strong> {booking.jamMulai} - {booking.jamSelesai}</div>
-                                                                <div>📝 <strong>Kegiatan:</strong> {booking.kegiatan}</div>
-                                                            </div>
-                                                        </div>
-                                                    ))
+                                                    renderBookingsByHub(upcomingGrouped, false)
                                                 )}
                                             </div>
                                         </div>
@@ -1460,49 +1521,20 @@
                                                 <div 
                                                     className="bookings-group-header past"
                                                     onClick={() => setShowPastBookings(!showPastBookings)}
-                                                    title="Klik untuk tampilkan/sembunyikan booking yang sudah lewat"
                                                 >
                                                     <h3>
-                                                        🕐 Booking Sudah Lewat ({pastBookings.length}) 
-                                                        <span style={{fontSize: '0.7em', opacity: 0.8, fontWeight: 'normal'}}>
-                                                            {showPastBookings ? '(Klik untuk sembunyikan)' : '(Klik untuk tampilkan)'}
-                                                        </span>
+                                                        🕐 Booking Sudah Lewat ({pastBookings.length})
                                                     </h3>
                                                     <span className={`toggle-icon ${showPastBookings ? 'expanded' : ''}`}>
                                                         ▼
                                                     </span>
                                                 </div>
                                                 <div className={`bookings-group-content ${showPastBookings ? 'expanded' : ''}`}>
-                                                    {pastBookings.map(booking => (
-                                                        <div key={booking.id} className="booking-item past">
-                                                            <div className="booking-header">
-                                                                <div>
-                                                                    <span className="booking-room">{booking.roomName}</span>
-                                                                    <div style={{fontSize: '0.85em', color: '#999', fontWeight: '600', marginTop: '5px'}}>
-                                                                        📍 {booking.hubName}
-                                                                    </div>
-                                                                </div>
-                                                                <button 
-                                                                    className="delete-btn"
-                                                                    onClick={() => deleteBooking(booking.id)}
-                                                                    style={{background: '#999'}}
-                                                                >
-                                                                    🗑️ Hapus
-                                                                </button>
-                                                            </div>
-                                                            <div className="booking-details">
-                                                                <div>👤 <strong>Pemohon:</strong> {booking.pemohon}</div>
-                                                                <div>📅 <strong>Tanggal:</strong> {displayDate(booking.tanggal)}</div>
-                                                                <div>🕐 <strong>Waktu:</strong> {booking.jamMulai} - {booking.jamSelesai}</div>
-                                                                <div>📝 <strong>Kegiatan:</strong> {booking.kegiatan}</div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                                                    {renderBookingsByHub(pastGrouped, true)}
                                                 </div>
                                             </div>
                                         )}
                                         
-                                        {bookings.length === 0 && (
                                             <p style={{textAlign: 'center', color: '#999', padding: '40px'}}>
                                                 Belum ada booking. Silakan buat booking baru!
                                             </p>
